@@ -7,15 +7,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
 import numpy as np
-from timm.models.layers import DropPath, trunc_normal_
+#from timm.models.layers import DropPath, trunc_normal_
 
 from functools import reduce, lru_cache
 from operator import mul
-from einops import rearrange
+#from einops import rearrange
 
 import logging
-from mmcv.utils import get_logger
-from mmcv.runner import load_checkpoint
+#from mmcv.utils import get_logger
+#from mmcv.runner import load_checkpoint
 
 
 def get_root_logger(log_file=None, log_level=logging.INFO):

@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 from torch import nn
+
+import torchvision_resnet
 from video_dataset import VideoFrameDataset, ImglistToTensor
 from torchvision import transforms
 import torch
@@ -8,16 +10,17 @@ import torch
 #from mpl_toolkits.axes_grid1 import ImageGrid
 import os
 import pytorchvideo.models.vision_transformers
+from torchvision_resnet import *
 import torch.nn.functional as F
 import torch.optim as optim
 import r2plus1d
 import x3d
 import swin_transformer
 
-batch = 2
-num_seg = 6
+batch = 4
+num_seg = 3
 frames_per_seg = 1
-resize = 224
+resize = 112
 temporal_frame = num_seg * frames_per_seg
 learning_rate = 0.000025
 weight_decay = 0.05
@@ -29,7 +32,7 @@ atten_head_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
 pool_q_stride_size = [[1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]]
 pool_kv_stride_adaptive = [1, 8, 8]
 pool_kvq_kernel = [3, 3, 3]
-def make_kinetics_mvit():
+def make_mvit():
   return pytorchvideo.models.vision_transformers.create_multiscale_vision_transformers(
       spatial_size=resize,
       temporal_size=temporal_frame,# RGB input from Kinetics
@@ -43,24 +46,37 @@ def make_kinetics_mvit():
       head_num_classes=classes, # Kinetics has 400 classes so we need out final head to align
   )
 
-def make_kinetics_swin_transformer():
+def make_swin_transformer():
   return swin_transformer.SwinTransformer3D(
 
       depths=[2,2,2,2],
 
   )
 
-def make_kinetics_resnet():
+def make_resnet3d_50():
   return pytorchvideo.models.resnet.create_resnet(
       input_channel=3,
       model_depth=50,
       model_num_class=50,
       norm=nn.BatchNorm3d,
       activation=nn.ReLU,
+  )
+
+def make_resnet3d_18():
+  return torchvision_resnet.r3d_18(
+      pretrained=False,
+      num_classes = 50,
 
   )
 
-def make_kinetics_r2plus1d():
+def make_r2plus1d_18():
+  return torchvision_resnet.r2plus1d_18(
+      pretrained=False,
+      num_classes = 50,
+
+  )
+
+def make_r2plus1d():
   return r2plus1d.create_r2plus1d(
       input_channel=3,
       model_depth=50,
@@ -68,23 +84,24 @@ def make_kinetics_r2plus1d():
       norm=nn.BatchNorm3d,
       dropout_rate=0.0,
       activation=nn.ReLU,
-
   )
 
 
-def make_kinetics_slowfast():
+
+
+def make_slowfast():
   return pytorchvideo.models.slowfast.create_slowfast(
       model_depth=18,
       model_num_class=50,
   )
-def make_kinetics_x3d():
+def make_x3d():
     return x3d.create_x3d(
         input_clip_length=temporal_frame,
         input_crop_size=resize,
         model_num_class=50,
     )
 
-def make_kinetics_csn():
+def make_csn():
     return pytorchvideo.models.csn.create_csn(
         model_num_class=50,
         dropout_rate=0.0,
@@ -92,10 +109,8 @@ def make_kinetics_csn():
     )
 
 
-#videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_annotation')
-videos_root = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_annotation', 'UCF50_annotation')
 
-#videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_ucf50')
+videos_root = os.path.join('D:/data_dehao/UCF50_annotation', 'UCF50_annotation')
 annotation_file = os.path.join(videos_root, 'annotations.txt')
 
 
@@ -117,23 +132,15 @@ dataset = VideoFrameDataset(
         test_mode=False
     )
 
-sample = dataset[2]
-frame_tensor = sample[0]  # tensor of shape (NUM_SEGMENTS*FRAMES_PER_SEGMENT) x CHANNELS x HEIGHT x WIDTH
-label = sample[1]  # integer label
-
-print('Video Tensor Size:', frame_tensor.size())
-
 dataloader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 
-#videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_val_annotation')
-#videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_val_ucf50')
-videos_root_val = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_val_annotation', 'UCF50_val_annotation')
+videos_root_val = os.path.join('D:/data_dehao/UCF50_val_annotation', 'UCF50_val_annotation')
 annotation_file_val = os.path.join(videos_root_val, 'annotations_val.txt')
 
 dataset_val = VideoFrameDataset(
@@ -149,19 +156,28 @@ val_dataloader = torch.utils.data.DataLoader(
         dataset=dataset_val,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
-#val_dataloader = dataloader
+
+sample = dataset[2]
+frame_tensor = sample[0]  # tensor of shape (NUM_SEGMENTS*FRAMES_PER_SEGMENT) x CHANNELS x HEIGHT x WIDTH
+label = sample[1]  # integer label
+
+print('Video Tensor Size:', frame_tensor.size())
 
 
-#model = make_kinetics_mvit()
-#model = make_kinetics_resnet()
-#model = make_kinetics_slowfast()
-#model = make_kinetics_x3d()
-model = make_kinetics_r2plus1d()
-#model = make_kinetics_csn()
-#model = make_kinetics_swin_transformer()
+
+#model = make_mvit()
+#model = make_resnet3d_50()
+model = make_resnet3d_18()
+#model = make_r2plus1d()
+#model = make_r2plus1d_18()
+#model = make_slowfast()
+#model = make_x3d()
+
+#model = make_csn()
+#model = make_swin_transformer()
 if torch.cuda.is_available():
     model = model.cuda()
 
