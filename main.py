@@ -4,6 +4,7 @@ from torch import nn
 from video_dataset import VideoFrameDataset, ImglistToTensor
 from torchvision import transforms
 import torch
+import torchvision_resnet
 #import matplotlib.pyplot as plt
 #from mpl_toolkits.axes_grid1 import ImageGrid
 import os
@@ -14,10 +15,10 @@ import r2plus1d
 import x3d
 import swin_transformer
 
-batch = 2
-num_seg = 6
+batch = 6
+num_seg = 8
 frames_per_seg = 1
-resize = 224
+resize = 112
 temporal_frame = num_seg * frames_per_seg
 learning_rate = 0.000025
 weight_decay = 0.05
@@ -169,9 +170,9 @@ val_dataloader = torch.utils.data.DataLoader(
 #val_dataloader = dataloader
 
 
-#model = make_mvit()
+model = make_mvit()
 #model = make_resnet3d_50()
-model = make_resnet3d_18()
+#model = make_resnet3d_18()
 #model = make_r2plus1d()
 #model = make_r2plus1d_18()
 #model = make_slowfast()
@@ -185,7 +186,7 @@ if torch.cuda.is_available():
 
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.1)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 epoch = 50
 min_valid_loss = np.inf
 for i in range(epoch):
@@ -204,7 +205,7 @@ for i in range(epoch):
         optimizer.step()
         training_loss += loss.item()
 
-    #scheduler.step()
+    scheduler.step()
 
     valid_loss = 0.0
     total = 0.0
@@ -239,7 +240,7 @@ for i in range(epoch):
 
 
 
-
+'''
 slow_pathway = torch.index_select(
             video_batch.cpu(),
             2,
@@ -250,5 +251,4 @@ slow_pathway = torch.index_select(
 
 frame_list = [slow_pathway.cuda(), video_batch]
 model(frame_list)
-
-
+'''

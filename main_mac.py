@@ -14,10 +14,10 @@ import r2plus1d
 import x3d
 import swin_transformer
 
-batch = 2
-num_seg = 6
+batch = 4
+num_seg = 4
 frames_per_seg = 1
-resize = 224
+resize = 112
 temporal_frame = num_seg * frames_per_seg
 learning_rate = 0.000025
 weight_decay = 0.05
@@ -156,10 +156,10 @@ val_dataloader = torch.utils.data.DataLoader(
 
 
 #model = make_kinetics_mvit()
-#model = make_kinetics_resnet()
+model = make_kinetics_resnet()
 #model = make_kinetics_slowfast()
 #model = make_kinetics_x3d()
-model = make_kinetics_r2plus1d()
+#model = make_kinetics_r2plus1d()
 #model = make_kinetics_csn()
 #model = make_kinetics_swin_transformer()
 if torch.cuda.is_available():

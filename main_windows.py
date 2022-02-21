@@ -184,7 +184,7 @@ if torch.cuda.is_available():
 
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
-scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.1)
+scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 epoch = 50
 min_valid_loss = np.inf
 for i in range(epoch):
@@ -203,7 +203,7 @@ for i in range(epoch):
         optimizer.step()
         training_loss += loss.item()
 
-    #scheduler.step()
+    scheduler.step()
 
     valid_loss = 0.0
     total = 0.0
