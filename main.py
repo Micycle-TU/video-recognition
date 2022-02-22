@@ -106,6 +106,17 @@ def make_csn():
 
     )
 
+def make_intergrate_mvit( **kwargs):
+  return pytorchvideo.models.vision_transformers.create_multiscale_vision_transformers(
+      spatial_size=resize//2,
+      temporal_size=temporal_frame,# RGB input from Kinetics
+      depth=16,
+      num_heads=1,
+      input_channels=512,
+      head_num_classes=classes, # Kinetics has 400 classes so we need out final head to align
+      **kwargs,
+  )
+
 
 #videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_annotation')
 videos_root = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_annotation', 'UCF50_annotation')
@@ -170,18 +181,53 @@ val_dataloader = torch.utils.data.DataLoader(
 #val_dataloader = dataloader
 
 
-model = make_mvit()
+class MyModelA(nn.Module):
+    def __init__(self):
+        super(MyModelA, self).__init__()
+        self.model = make_resnet3d_18(stride = [1,1,1,1],head= None)
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
+
+class MyModelB(nn.Module):
+    def __init__(self):
+        super(MyModelB, self).__init__()
+        self.model2 = make_intergrate_mvit()
+
+    def forward(self, x):
+        x = self.model2(x)
+        return x
+
+
+class MyEnsemble(nn.Module):
+    def __init__(self, modelA, modelB):
+        super(MyEnsemble, self).__init__()
+        self.modelA = modelA
+        self.modelB = modelB
+
+    def forward(self, x):
+        x1 = self.modelA(x)
+        x2 = self.modelB(x1)
+        return x2
+
+modelA = MyModelA()
+modelB = MyModelB()
+
+model = MyEnsemble(modelA, modelB)
+#model = make_mvit()
 #model = make_resnet3d_50()
 #model = make_resnet3d_18()
 #model = make_r2plus1d()
 #model = make_r2plus1d_18()
 #model = make_slowfast()
 #model = make_x3d()
-
 #model = make_csn()
 #model = make_swin_transformer()
-if torch.cuda.is_available():
-    model = model.cuda()
+#if torch.cuda.is_available():
+    #model = model.cuda()
+
 
 
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
