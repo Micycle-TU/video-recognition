@@ -14,6 +14,7 @@ import torch.optim as optim
 import r2plus1d
 import x3d
 import swin_transformer
+import Nlocal
 
 batch = 6
 num_seg = 8
@@ -60,17 +61,19 @@ def make_resnet3d_50():
       activation=nn.ReLU,
   )
 
-def make_resnet3d_18():
+def make_resnet3d_18(**kwargs):
   return torchvision_resnet.r3d_18(
       pretrained=False,
       num_classes = 50,
+      **kwargs
 
   )
 
-def make_r2plus1d_18():
+def make_r2plus1d_18(**kwargs):
   return torchvision_resnet.r2plus1d_18(
       pretrained=False,
       num_classes = 50,
+      **kwargs
 
   )
 
@@ -200,6 +203,23 @@ class MyModelB(nn.Module):
         x = self.model2(x)
         return x
 
+class MyModelC(nn.Module):
+    def __init__(self):
+        super(MyModelC, self).__init__()
+        self.layer1 = Nlocal.create_nonlocal(dim_in=3,dim_inner=3//2)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        return x
+class MyModelD(nn.Module):
+    def __init__(self):
+        super(MyModelD, self).__init__()
+        self.model = make_resnet3d_18()
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
 
 class MyEnsemble(nn.Module):
     def __init__(self, modelA, modelB):
@@ -214,8 +234,11 @@ class MyEnsemble(nn.Module):
 
 modelA = MyModelA()
 modelB = MyModelB()
+modelC = MyModelC()
+modelD = MyModelD()
 
-model = MyEnsemble(modelA, modelB)
+model = MyEnsemble(modelA, modelB) #the intergration of Resnet18 and MViT
+model = MyEnsemble(modelC, modelD) #the intergration of Non-local and Resnet18
 #model = make_mvit()
 #model = make_resnet3d_50()
 #model = make_resnet3d_18()
