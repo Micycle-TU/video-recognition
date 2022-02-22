@@ -13,11 +13,12 @@ import torch.optim as optim
 import r2plus1d
 import x3d
 import swin_transformer
+import torchvision_resnet
 
-batch = 4
+batch = 2
 num_seg = 4
 frames_per_seg = 1
-resize = 112
+resize = 56
 temporal_frame = num_seg * frames_per_seg
 learning_rate = 0.000025
 weight_decay = 0.05
@@ -29,7 +30,7 @@ atten_head_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
 pool_q_stride_size = [[1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]]
 pool_kv_stride_adaptive = [1, 8, 8]
 pool_kvq_kernel = [3, 3, 3]
-def make_kinetics_mvit():
+def make_mvit( **kwargs):
   return pytorchvideo.models.vision_transformers.create_multiscale_vision_transformers(
       spatial_size=resize,
       temporal_size=temporal_frame,# RGB input from Kinetics
@@ -41,26 +42,42 @@ def make_kinetics_mvit():
       pool_kv_stride_adaptive=pool_kv_stride_adaptive,
       pool_kvq_kernel=pool_kvq_kernel,
       head_num_classes=classes, # Kinetics has 400 classes so we need out final head to align
+      **kwargs,
   )
 
-def make_kinetics_swin_transformer():
+def make_swin_transformer():
   return swin_transformer.SwinTransformer3D(
 
       depths=[2,2,2,2],
 
   )
 
-def make_kinetics_resnet():
+def make_resnet3d_50():
   return pytorchvideo.models.resnet.create_resnet(
       input_channel=3,
       model_depth=50,
       model_num_class=50,
       norm=nn.BatchNorm3d,
       activation=nn.ReLU,
+  )
+
+def make_resnet3d_18(**kwargs):
+  return torchvision_resnet.r3d_18(
+      pretrained=False,
+      num_classes = 50,
+      **kwargs
 
   )
 
-def make_kinetics_r2plus1d():
+def make_r2plus1d_18(**kwargs):
+  return torchvision_resnet.r2plus1d_18(
+      pretrained=False,
+      num_classes = 50,
+      **kwargs
+
+  )
+
+def make_r2plus1d():
   return r2plus1d.create_r2plus1d(
       input_channel=3,
       model_depth=50,
@@ -68,23 +85,24 @@ def make_kinetics_r2plus1d():
       norm=nn.BatchNorm3d,
       dropout_rate=0.0,
       activation=nn.ReLU,
-
   )
 
 
-def make_kinetics_slowfast():
+
+
+def make_slowfast():
   return pytorchvideo.models.slowfast.create_slowfast(
       model_depth=18,
       model_num_class=50,
   )
-def make_kinetics_x3d():
+def make_x3d():
     return x3d.create_x3d(
         input_clip_length=temporal_frame,
         input_crop_size=resize,
         model_num_class=50,
     )
 
-def make_kinetics_csn():
+def make_csn():
     return pytorchvideo.models.csn.create_csn(
         model_num_class=50,
         dropout_rate=0.0,
@@ -93,10 +111,10 @@ def make_kinetics_csn():
 
 
 #videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_annotation')
-videos_root = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_annotation', 'UCF50_annotation')
+videos_root = os.path.join('/Users/micycletu/Documents', 'Sub_val_ucf50')
 
 #videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_ucf50')
-annotation_file = os.path.join(videos_root, 'annotations.txt')
+annotation_file = os.path.join(videos_root, 'annotations_val.txt')
 
 
 preprocess = transforms.Compose([
@@ -127,13 +145,13 @@ dataloader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 
 #videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_val_annotation')
 #videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_val_ucf50')
-videos_root_val = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_val_annotation', 'UCF50_val_annotation')
+videos_root_val = os.path.join('/Users/micycletu/Documents', 'Sub_val_ucf50')
 annotation_file_val = os.path.join(videos_root_val, 'annotations_val.txt')
 
 dataset_val = VideoFrameDataset(
@@ -149,21 +167,65 @@ val_dataloader = torch.utils.data.DataLoader(
         dataset=dataset_val,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 #val_dataloader = dataloader
 
 
-#model = make_kinetics_mvit()
-model = make_kinetics_resnet()
-#model = make_kinetics_slowfast()
-#model = make_kinetics_x3d()
-#model = make_kinetics_r2plus1d()
-#model = make_kinetics_csn()
-#model = make_kinetics_swin_transformer()
+#model = make_mvit()
+#model = make_resnet3d_50()
+model = make_resnet3d_18()
+#model = make_r2plus1d()
+#model = make_r2plus1d_18()
+#model = make_slowfast()
+#model = make_x3d()
+#model = make_csn()
+#model = make_swin_transformer()
 if torch.cuda.is_available():
     model = model.cuda()
+'''
+class MyModelA(nn.Module):
+    def __init__(self):
+        super(MyModelA, self).__init__()
+        self.model = make_resnet3d_18(stride = [1,1,1,1],head= None)
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
+
+
+class MyModelB(nn.Module):
+    def __init__(self):
+        super(MyModelB, self).__init__()
+        self.model2 = make_mvit(spatial_size = resize // 2)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        return x
+
+
+class MyEnsemble(nn.Module):
+    def __init__(self, modelA, modelB):
+        super(MyEnsemble, self).__init__()
+        self.modelA = modelA
+        self.modelB = modelB
+
+    def forward(self, x):
+        x1 = self.modelA(x)
+        x2 = self.modelB(x1)
+        return x2
+
+
+# Create models and load state_dicts    
+modelA = MyModelA()
+modelB = MyModelB()
+# Load state dicts
+#modelA.load_state_dict(torch.load(PATH))
+
+#model = MyEnsemble(modelA, modelB)
+'''
+
 
 
 optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -222,16 +284,5 @@ for i in range(epoch):
 
 
 
-
-slow_pathway = torch.index_select(
-            video_batch.cpu(),
-            2,
-            torch.linspace(
-                0, video_batch.cpu().shape[2] - 1, video_batch.cpu().shape[2] // 4
-            ).long(),
-        )
-
-frame_list = [slow_pathway.cuda(), video_batch]
-model(frame_list)
 
 

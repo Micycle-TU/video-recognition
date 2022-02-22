@@ -194,7 +194,7 @@ class VideoResNet(nn.Module):
 
     def __init__(self, block, conv_makers, layers,
                  stem, num_classes=400, head = True,
-                 zero_init_residual=False):
+                 zero_init_residual=False, stride=[1,2,2,2]):
         """Generic resnet video generator.
         Args:
             block (nn.Module): resnet building block
@@ -209,10 +209,10 @@ class VideoResNet(nn.Module):
         self.head = head
         self.stem = stem()
 
-        self.layer1 = self._make_layer(block, conv_makers[0], 64, layers[0], stride=1)
-        self.layer2 = self._make_layer(block, conv_makers[1], 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, conv_makers[2], 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, conv_makers[3], 512, layers[3], stride=2)
+        self.layer1 = self._make_layer(block, conv_makers[0], 64, layers[0], stride=stride[0])
+        self.layer2 = self._make_layer(block, conv_makers[1], 128, layers[1], stride=stride[1])
+        self.layer3 = self._make_layer(block, conv_makers[2], 256, layers[2], stride=stride[2])
+        self.layer4 = self._make_layer(block, conv_makers[3], 512, layers[3], stride=stride[3])
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
