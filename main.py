@@ -17,11 +17,11 @@ import swin_transformer
 import Nlocal
 
 batch = 6
-num_seg = 8
+num_seg = 6
 frames_per_seg = 1
 resize = 112
 temporal_frame = num_seg * frames_per_seg
-learning_rate = 0.000025
+learning_rate = 0.000025  #0 .000025
 weight_decay = 0.05
 classes = 50
 
@@ -41,6 +41,8 @@ def make_mvit():
       atten_head_mul=atten_head_mul,
       pool_q_stride_size=pool_q_stride_size,
       pool_kv_stride_adaptive=pool_kv_stride_adaptive,
+      dropout_rate_block=0.3,
+      #droppath_rate_block=0.5,
       pool_kvq_kernel=pool_kvq_kernel,
       head_num_classes=classes, # Kinetics has 400 classes so we need out final head to align
   )
@@ -238,18 +240,18 @@ modelC = MyModelC()
 modelD = MyModelD()
 
 model = MyEnsemble(modelA, modelB) #the intergration of Resnet18 and MViT
-model = MyEnsemble(modelC, modelD) #the intergration of Non-local and Resnet18
-#model = make_mvit()
+#model = MyEnsemble(modelC, modelD) #the intergration of Non-local and Resnet18
+#model = make_mvit()  #need small learning rate to start
 #model = make_resnet3d_50()
-#model = make_resnet3d_18()
+#model = make_resnet3d_18()  #the most stable and easiest to train
 #model = make_r2plus1d()
-#model = make_r2plus1d_18()
+#model = make_r2plus1d_18() #the performance is litter worse than resnet18
 #model = make_slowfast()
-#model = make_x3d()
+#model = make_x3d()  #very difficult to train it
 #model = make_csn()
 #model = make_swin_transformer()
-#if torch.cuda.is_available():
-    #model = model.cuda()
+if torch.cuda.is_available():
+    model = model.cuda()
 
 
 

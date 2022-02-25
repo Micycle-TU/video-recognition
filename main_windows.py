@@ -238,7 +238,7 @@ for i in range(epoch):
 
 
 
-
+'''
 slow_pathway = torch.index_select(
             video_batch.cpu(),
             2,
@@ -249,5 +249,5 @@ slow_pathway = torch.index_select(
 
 frame_list = [slow_pathway.cuda(), video_batch]
 model(frame_list)
-
+'''
 
