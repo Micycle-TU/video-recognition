@@ -16,14 +16,14 @@ import x3d
 import swin_transformer
 import Nlocal
 
-batch = 6
-num_seg = 6
+batch = 8
+num_seg = 8
 frames_per_seg = 1
 resize = 112
 temporal_frame = num_seg * frames_per_seg
-learning_rate = 0.000025  #0 .000025
+learning_rate = 0.00025  #0 .000025
 weight_decay = 0.05
-classes = 50
+classes = 101
 
 
 embed_dim_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
@@ -58,7 +58,7 @@ def make_resnet3d_50():
   return pytorchvideo.models.resnet.create_resnet(
       input_channel=3,
       model_depth=50,
-      model_num_class=50,
+      model_num_class=classes,
       norm=nn.BatchNorm3d,
       activation=nn.ReLU,
   )
@@ -66,7 +66,7 @@ def make_resnet3d_50():
 def make_resnet3d_18(**kwargs):
   return torchvision_resnet.r3d_18(
       pretrained=False,
-      num_classes = 50,
+      num_classes = classes,
       **kwargs
 
   )
@@ -74,7 +74,7 @@ def make_resnet3d_18(**kwargs):
 def make_r2plus1d_18(**kwargs):
   return torchvision_resnet.r2plus1d_18(
       pretrained=False,
-      num_classes = 50,
+      num_classes = classes,
       **kwargs
 
   )
@@ -124,7 +124,8 @@ def make_intergrate_mvit( **kwargs):
 
 
 #videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_annotation')
-videos_root = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_annotation', 'UCF50_annotation')
+#videos_root = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_annotation', 'UCF50_annotation')
+videos_root = 'D:/Dehao/Data/UCF101_annotation'
 
 #videos_root = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_ucf50')
 annotation_file = os.path.join(videos_root, 'annotations.txt')
@@ -158,13 +159,14 @@ dataloader = torch.utils.data.DataLoader(
         dataset=dataset,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 
 #videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'UCF50_val_annotation')
 #videos_root_val = os.path.join('/media/ysun1/Seagate_1/Dehao/data', 'Sub_val_ucf50')
-videos_root_val = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_val_annotation', 'UCF50_val_annotation')
+#videos_root_val = os.path.join('/media/ysun1/Seagate Expansion Drive/Dehao/data_dehao/UCF50_val_annotation', 'UCF50_val_annotation')
+videos_root_val = 'D:/Dehao/Data/UCF101_val_annotation'
 annotation_file_val = os.path.join(videos_root_val, 'annotations_val.txt')
 
 dataset_val = VideoFrameDataset(
@@ -180,7 +182,7 @@ val_dataloader = torch.utils.data.DataLoader(
         dataset=dataset_val,
         batch_size=batch,
         shuffle=True,
-        num_workers=4,
+        num_workers=0,
         pin_memory=True
     )
 #val_dataloader = dataloader
@@ -239,13 +241,13 @@ modelB = MyModelB()
 modelC = MyModelC()
 modelD = MyModelD()
 
-model = MyEnsemble(modelA, modelB) #the intergration of Resnet18 and MViT
+#model = MyEnsemble(modelA, modelB) #the intergration of Resnet18 and MViT
 #model = MyEnsemble(modelC, modelD) #the intergration of Non-local and Resnet18
 #model = make_mvit()  #need small learning rate to start
 #model = make_resnet3d_50()
 #model = make_resnet3d_18()  #the most stable and easiest to train
 #model = make_r2plus1d()
-#model = make_r2plus1d_18() #the performance is litter worse than resnet18
+model = make_r2plus1d_18() #the performance is litter worse than resnet18
 #model = make_slowfast()
 #model = make_x3d()  #very difficult to train it
 #model = make_csn()
@@ -310,16 +312,3 @@ for i in range(epoch):
 
 
 
-
-'''
-slow_pathway = torch.index_select(
-            video_batch.cpu(),
-            2,
-            torch.linspace(
-                0, video_batch.cpu().shape[2] - 1, video_batch.cpu().shape[2] // 4
-            ).long(),
-        )
-
-frame_list = [slow_pathway.cuda(), video_batch]
-model(frame_list)
-'''
